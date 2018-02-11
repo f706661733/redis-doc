@@ -23,9 +23,15 @@ to all the subscribed clients.
 
 A client subscribed to one or more channels should not issue commands,
 although it can subscribe and unsubscribe to and from other channels.
-The reply of the `SUBSCRIBE` and `UNSUBSCRIBE` operations are sent in
-the form of messages, so that the client can just read a coherent stream
-of messages where the first element indicates the type of message.
+The replies to subscription and unsubscription operations are sent in
+the form of messages, so that the client can just read a coherent
+stream of messages where the first element indicates the type of
+message. The commands that are allowed in the context of a subscribed
+client are `SUBSCRIBE`, `PSUBSCRIBE`, `UNSUBSCRIBE`, `PUNSUBSCRIBE`,
+`PING` and `QUIT`.
+
+Please not that `redis-cli` will not accept any commands once in
+subscribed mode and can only quit the mode with `Ctrl-C`.
 
 ## Format of pushed messages
 
@@ -175,7 +181,7 @@ Because all the messages received contain the original subscription
 causing the message delivery (the channel in the case of message type,
 and the original pattern in the case of pmessage type) client libraries
 may bind the original subscription to callbacks (that can be anonymous
-functions, blocks, function pointers), using an hash table.
+functions, blocks, function pointers), using a hash table.
 
 When a message is received an O(1) lookup can be done in order to
 deliver the message to the registered callback.

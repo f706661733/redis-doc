@@ -41,7 +41,7 @@ It is a good idea to copy both the Redis server and the command line interface i
 * sudo cp src/redis-server /usr/local/bin/
 * sudo cp src/redis-cli /usr/local/bin/
 
-Or just using `make install`.
+Or just using `sudo make install`.
 
 In the following documentation we assume that /usr/local/bin is in your PATH environment variable so that you can execute both the binaries without specifying the full path.
 
@@ -85,6 +85,24 @@ Another interesting way to run redis-cli is without arguments: the program will 
 
 At this point you are able to talk with Redis. It is the right time to pause a bit with this tutorial and start the [fifteen minutes introduction to Redis data types](http://redis.io/topics/data-types-intro) in order to learn a few Redis commands. Otherwise if you already know a few basic Redis commands you can keep reading.
 
+Securing Redis
+===
+
+By default Redis binds to **all the interfaces** and has no authentication at
+all. If you use Redis into a very controlled environment, separated from the
+external internet and in general from attackers, that's fine. However if Redis
+without any hardening is exposed to the internet, it is a big security
+concern. If you are not 100% sure your environment is secured properly, please
+check the following steps in order to make Redis more secure, which are
+enlisted in order of increased security.
+
+1. Make sure the port Redis uses to listen for connections (by default 6379 and additionally 16379 if you run Redis in cluster mode, plus 26379 for Sentinel) is firewalled, so that it is not possible to contact Redis from the outside world.
+2. Use a configuration file where the `bind` directive is set in order to guarantee that Redis listens just in as little network interfaces you are using. For example only the loopback interface (127.0.0.1) if you are accessing Redis just locally from the same computer, and so forth.
+3. Use the `requirepass` option in order to add an additional layer of security so that clients will require to authenticate using the `AUTH` command.
+4. Use [spiped](http://www.tarsnap.com/spiped.html) or another SSL tunnelling software in order to encrypt traffic between Redis servers and Redis clients if your environment requires encryption.
+
+Note that a Redis exposed to the internet without any security [is very simple to exploit](http://antirez.com/news/96), so make sure you understand the above and apply **at least** a firewalling layer. After the firewalling is in place, try to connect with `redis-cli` from an external host in order to prove yourself the instance is actually not reachable.
+
 Using Redis from your application
 ===
 
@@ -94,8 +112,8 @@ download and install a Redis client library for your programming language.
 You'll find a [full list of clients for different languages in this page](http://redis.io/clients).
 
 For instance if you happen to use the Ruby programming language our best advice
-is to use the [Redis-rb](http://github.com/ezmobius/redis-rb) client.
-You can install it using the command **gem install redis** (also make sure to install the **SystemTimer** gem as well).
+is to use the [Redis-rb](https://github.com/redis/redis-rb) client.
+You can install it using the command **gem install redis**.
 
 These instructions are Ruby specific but actually many library clients for
 popular languages look quite similar: you create a Redis object and execute
@@ -176,7 +194,7 @@ Both the pid file path and the configuration file name depend on the port number
 
 You are done! Now you can try running your instance with:
 
-    /etc/init.d/redis_6379 start
+    sudo /etc/init.d/redis_6379 start
 
 Make sure that everything is working as expected:
 

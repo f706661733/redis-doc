@@ -16,7 +16,12 @@ The `OBJECT` command supports multiple sub commands:
 * `OBJECT IDLETIME <key>` returns the number of seconds since the object stored
   at the specified key is idle (not requested by read or write operations).
   While the value is returned in seconds the actual resolution of this timer is
-  10 seconds, but may vary in future implementations.
+  10 seconds, but may vary in future implementations. This subcommand is
+  available when `maxmemory-policy` is set to an LRU policy or `noeviction`. 
+* `OBJECT FREQ <key>` returns the logarithmic access frequency counter of the
+  object stored at the specified key. This subcommand is available when
+  `maxmemory-policy` is set to an LFU policy.
+* `OBJECT HELP` returns a succint help text.
 
 Objects can be encoded in different ways:
 
@@ -29,8 +34,8 @@ Objects can be encoded in different ways:
 * Sets can be encoded as `intset` or `hashtable`.
   The `intset` is a special encoding used for small sets composed solely of
   integers.
-* Hashes can be encoded as `zipmap` or `hashtable`.
-  The `zipmap` is a special encoding used for small hashes.
+* Hashes can be encoded as `ziplist` or `hashtable`.
+  The `ziplist` is a special encoding used for small hashes.
 * Sorted Sets can be encoded as `ziplist` or `skiplist` format.
   As for the List type small sorted sets can be specially encoded using
   `ziplist`, while the `skiplist` encoding is the one that works with sorted

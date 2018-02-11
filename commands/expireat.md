@@ -1,6 +1,7 @@
 `EXPIREAT` has the same effect and semantic as `EXPIRE`, but instead of
 specifying the number of seconds representing the TTL (time to live), it takes
-an absolute [Unix timestamp][hewowu] (seconds since January 1, 1970).
+an absolute [Unix timestamp][hewowu] (seconds since January 1, 1970). A
+timestamp in the past will delete the key immediately.
 
 [hewowu]: http://en.wikipedia.org/wiki/Unix_time
 
@@ -19,7 +20,7 @@ a given time in the future.
 @integer-reply, specifically:
 
 * `1` if the timeout was set.
-* `0` if `key` does not exist or the timeout could not be set (see: `EXPIRE`).
+* `0` if `key` does not exist.
 
 @examples
 

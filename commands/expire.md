@@ -3,8 +3,9 @@ After the timeout has expired, the key will automatically be deleted.
 A key with an associated timeout is often said to be _volatile_ in Redis
 terminology.
 
-The timeout is cleared only when the key is removed using the `DEL` command or
-overwritten using the `SET` or `GETSET` commands.
+The timeout will only be cleared by commands that delete or overwrite the
+contents of the key, including `DEL`, `SET`, `GETSET` and all the `*STORE`
+commands.
 This means that all the operations that conceptually _alter_ the value stored at
 the key without replacing it with a new one will leave the timeout untouched.
 For instance, incrementing the value of a key with `INCR`, pushing a new value
@@ -22,6 +23,14 @@ that is overwritten by a call like `RENAME Key_B Key_A`, it does not matter if
 the original `Key_A` had a timeout associated or not, the new key `Key_A` will
 inherit all the characteristics of `Key_B`.
 
+Note that calling `EXPIRE`/`PEXPIRE` with a non-positive timeout or
+`EXPIREAT`/`PEXPIREAT` with a time in the past will result in the key being
+[deleted][del] rather than expired (accordingly, the emitted [key event][ntf]
+will be `del`, not `expired`).
+
+[del]: /commands/del
+[ntf]: /topics/notifications
+
 ## Refreshing expires
 
 It is possible to call `EXPIRE` using as argument a key that already has an
@@ -37,12 +46,14 @@ command altering its value had the effect of removing the key entirely.
 This semantics was needed because of limitations in the replication layer that
 are now fixed.
 
+`EXPIRE` would return 0 and not alter the timeout for a key with a timeout set.
+
 @return
 
 @integer-reply, specifically:
 
 * `1` if the timeout was set.
-* `0` if `key` does not exist or the timeout could not be set.
+* `0` if `key` does not exist.
 
 @examples
 
@@ -59,8 +70,8 @@ TTL mykey
 Imagine you have a web service and you are interested in the latest N pages
 _recently_ visited by your users, such that each adjacent page view was not
 performed more than 60 seconds after the previous.
-Conceptually you may think at this set of page views as a _Navigation session_
-if your user, that may contain interesting information about what kind of
+Conceptually you may consider this set of page views as a _Navigation session_
+of your user, that may contain interesting information about what kind of
 products he or she is looking for currently, so that you can recommend related
 products.
 
@@ -124,7 +135,7 @@ lasting for 1000 seconds.
 
 Redis keys are expired in two ways: a passive way, and an active way.
 
-A key is actively expired simply when some client tries to access it, and the
+A key is passively expired simply when some client tries to access it, and the
 key is found to be timed out.
 
 Of course this is not enough as there are expired keys that will never be

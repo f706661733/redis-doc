@@ -1,7 +1,7 @@
 An introduction to Redis data types and abstractions
 ===
 
-Redis is not a *plain* key-value store, actually it is a *data structures server*, supporting different kind of values. What this means is that, while in
+Redis is not a *plain* key-value store, it is actually a *data structures server*, supporting different kinds of values. What this means is that, while in
 traditional key-value stores you associated string keys to string values, in
 Redis the value is not limited to a simple string, but can also hold more complex
 data structures. The following is the list of all the data structures supported
@@ -29,8 +29,8 @@ It's not always trivial to grasp how these data types work and what to use in
 order to solve a given problem from the [command reference](/commands), so this
 document is a crash course to Redis data types and their most common patterns.
 
-For all the examples we'll use the `redis-cli` utility, that's a simple but
-handy command line utility to issue commands against the Redis server.
+For all the examples we'll use the `redis-cli` utility, a simple but
+handy command-line utility, to issue commands against the Redis server.
 
 Redis keys
 ---
@@ -41,11 +41,11 @@ The empty string is also a valid key.
 
 A few other rules about keys:
 
-* Very long keys are not a good idea, for instance a key of 1024 bytes is a bad
+* Very long keys are not a good idea. For instance a key of 1024 bytes is a bad
   idea not only memory-wise, but also because the lookup of the key in the
   dataset may require several costly key-comparisons. Even when the task at hand
-  is to match the existence of a large value, to resort to hashing it (for example
-  with SHA1) is a better idea, especially from the point of view of memory
+  is to match the existence of a large value, hashing it (for example
+  with SHA1) is a better idea, especially from the perspective of memory
   and bandwidth.
 * Very short keys are often not a good idea. There is little point in writing
   "u1000flw" as a key if you can instead write "user:1000:followers".  The latter
@@ -83,7 +83,7 @@ already stored into the key, in the case that the key already exists, even if
 the key is associated with a non-string value. So `SET` performs an assignment.
 
 Values can be strings (including binary data) of every kind, for instance you
-can store a jpeg image inside a key. A value can't be bigger than 512 MB.
+can store a jpeg image inside a value. A value can't be bigger than 512 MB.
 
 The `SET` command has interesting options, that are provided as additional
 arguments. For example, I may ask `SET` to fail if the key already exists,
@@ -327,7 +327,7 @@ pop. If we try to pop yet another element, this is the result we get:
     > rpop mylist
     (nil)
 
-Redis returned a NULL value to signal that there are no elements into the
+Redis returned a NULL value to signal that there are no elements in the
 list.
 
 Common use cases for lists
@@ -470,7 +470,7 @@ Examples of rule 1:
     > lpush mylist 1 2 3
     (integer) 3
 
-However we can't perform operations against the wrong type of the key exists:
+However we can't perform operations against the wrong type if the key exists:
 
     > set foo bar
     OK
@@ -572,7 +572,7 @@ elements. As you can see they are not sorted -- Redis is free to return the
 elements in any order at every call, since there is no contract with the
 user about element ordering.
 
-Redis has commands to test for membership. Does a given element exist?
+Redis has commands to test for membership. For example, checking if an element exists:
 
     > sismember myset 3
     (integer) 1
@@ -587,14 +587,14 @@ For instance we can easily use sets in order to implement tags.
 A simple way to model this problem is to have a set for every object we
 want to tag. The set contains the IDs of the tags associated with the object.
 
-Imagine we want to tag news.
-If our news ID 1000 is tagged with tags 1, 2, 5 and 77, we can have one set
-associating our tag IDs with the news item:
+One illustration is tagging news articles.
+If article ID 1000 is tagged with tags 1, 2, 5 and 77, a set
+can associate these tag IDs with the news item:
 
     > sadd news:1000:tags 1 2 5 77
     (integer) 4
 
-However sometimes I may want to have the inverse relation as well: the list
+We may also want to have the inverse relation as well: the list
 of all the news tagged with a given tag:
 
     > sadd tag:1:news 1000
@@ -626,7 +626,7 @@ sets. We can use:
     > sinter tag:1:news tag:2:news tag:10:news tag:27:news
     ... results here ...
 
-Intersection is not the only operation performed, you can also perform
+In addition to intersection you can also perform
 unions, difference, extract a random element, and so forth.
 
 The command to extract an element is called `SPOP`, and is handy to model
@@ -672,7 +672,7 @@ Now I'm ready to provide the first player with five cards:
 
 One pair of jacks, not great...
 
-Now it's a good time to introduce the set command that provides the number
+This is a good time to introduce the set command that provides the number
 of elements inside a set. This is often called the *cardinality of a set*
 in the context of set theory, so the Redis command is called `SCARD`.
 
@@ -711,7 +711,7 @@ sorted set elements, with their year of birth as "score".
     > zadd hackers 1940 "Alan Kay"
     (integer) 1
     > zadd hackers 1957 "Sophie Wilson"
-    (integer 1)
+    (integer) 1
     > zadd hackers 1953 "Richard Stallman"
     (integer) 1
     > zadd hackers 1949 "Anita Borg"
@@ -875,7 +875,7 @@ the `+` and `-` strings. See the documentation for more information.
 This feature is important because it allows us to use sorted sets as a generic
 index. For example, if you want to index elements by a 128-bit unsigned
 integer argument, all you need to do is to add elements into a sorted
-set with the same score (for example 0) but with an 8 byte prefix
+set with the same score (for example 0) but with an 16 byte prefix
 consisting of **the 128 bit number in big endian**. Since numbers in big
 endian, when ordered lexicographically (in raw bytes order) are actually
 ordered numerically as well, you can ask for ranges in the 128 bit space,
@@ -954,7 +954,7 @@ is a trivial example of `BITCOUNT` call:
     > bitcount key
     (integer) 2
 
-Common user cases for bitmaps are:
+Common use cases for bitmaps are:
 
 * Real time analytics of all kinds.
 * Storing space efficient but high performance boolean information associated with object IDs.
@@ -989,13 +989,13 @@ proportional to the number of items you want to count, because you need
 to remember the elements you have already seen in the past in order to avoid
 counting them multiple times. However there is a set of algorithms that trade
 memory for precision: you end with an estimated measure with a standard error,
-in the case of the Redis implementation, which is less than 1%.  The
+which in the case of the Redis implementation is less than 1%.  The
 magic of this algorithm is that you no longer need to use an amount of memory
 proportional to the number of items counted, and instead can use a
 constant amount of memory! 12k bytes in the worst case, or a lot less if your
 HyperLogLog (We'll just call them HLL from now) has seen very few elements.
 
-HLLs in Redis, while technically a different data structure, is encoded
+HLLs in Redis, while technically a different data structure, are encoded
 as a Redis string, so you can call `GET` to serialize a HLL, and `SET`
 to deserialize it back to the server.
 
@@ -1029,7 +1029,7 @@ There are other important things in the Redis API that can't be explored
 in the context of this document, but are worth your attention:
 
 * It is possible to [iterate the key space of a large collection incrementally](/commands/scan).
-* It is possible to run [Lua scripts server side](/commands/eval) to win latency and bandwidth.
+* It is possible to run [Lua scripts server side](/commands/eval) to improve latency and bandwidth.
 * Redis is also a [Pub-Sub server](/topics/pubsub).
 
 Learn more

@@ -5,7 +5,9 @@ exist in the target instance.
 
 The command is atomic and blocks the two instances for the time required to
 transfer the key, at any given time the key will appear to exist in a given
-instance or in the other instance, unless a timeout error occurs.
+instance or in the other instance, unless a timeout error occurs. In 3.2 and
+above, multiple keys can be pipelined in a single call to `MIGRATE` by passing
+the empty string ("") as key and adding the `KEYS` clause.
 
 The command internally uses `DUMP` to generate the serialized version of the key
 value, and `RESTORE` in order to synthesize the key in the target instance.
@@ -35,15 +37,37 @@ When any other error is returned (starting with `ERR`) `MIGRATE` guarantees that
 the key is still only present in the originating instance (unless a key with the
 same name was also _already_ present on the target instance).
 
-On success OK is returned.
+If there are no keys to migrate in the source instance `NOKEY` is returned.
+Because missing keys are possible in normal conditions, from expiry for example,
+`NOKEY` isn't an error. 
+
+## Migrating multiple keys with a single command call
+
+Starting with Redis 3.0.6 `MIGRATE` supports a new bulk-migration mode that
+uses pipelining in order to migrate multiple keys between instances without
+incurring in the round trip time latency and other overheads that there are
+when moving each key with a single `MIGRATE` call.
+
+In order to enable this form, the `KEYS` option is used, and the normal *key*
+argument is set to an empty string. The actual key names will be provided
+after the `KEYS` argument itself, like in the following example:
+
+    MIGRATE 192.168.1.34 6379 "" 0 5000 KEYS key1 key2 key3
+
+When this form is used the `NOKEY` status code is only returned when none
+of the keys is present in the instance, otherwise the command is executed, even if
+just a single key exists.
 
 ## Options
 
 * `COPY` -- Do not remove the key from the local instance.
 * `REPLACE` -- Replace existing key on the remote instance.
+* `KEYS` -- If the key argument is an empty string, the command will instead migrate all the keys that follow the `KEYS` option (see the above section for more info).
 
-`COPY` and `REPLACE` will be available in 3.0 and are not available in 2.6 or 2.8 
+`COPY` and `REPLACE` are available only in 3.0 and above.
+`KEYS` is available starting with Redis 3.0.6.
 
 @return
 
-@simple-string-reply: The command returns OK on success.
+@simple-string-reply: The command returns OK on success, or `NOKEY` if no keys were
+found in the source instance.  
